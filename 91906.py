@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
-import time
-import json
+import datetime as dt
+
 
 
 class Food:
@@ -88,9 +88,13 @@ class FridgeApp:
         top_frame = tk.Frame(self.root,bg="#d9d9d9")
         top_frame.pack(pady=20)
 
+        
+
         tk.Label(top_frame,text="Food Name:",bg="#d9d9d9").grid(row=0, column=0, padx=10, pady=5)
         self.name_entry = tk.Entry(top_frame,width=40)
         self.name_entry.grid(row=0, column=1)
+
+
 
         tk.Label(top_frame,text="Type:",bg="#d9d9d9").grid(row=2, column=0)
         self.type_box = ttk.Combobox(
@@ -107,8 +111,15 @@ class FridgeApp:
         )
 
         tk.Label(top_frame,text="Expiry Date:",bg="#d9d9d9").grid(row=1, column=0)
-        self.expiry_entry = tk.Entry(top_frame,width=40)
-        self.expiry_entry.grid(row=1, column=1)
+        self.expiry_box = ttk.Combobox(
+            top_frame,
+            values=[
+                
+            ],
+            state="readonly",
+            width=37
+        )
+        self.expiry_box.grid(row=1, column=1)
         self.type_box.grid(row=2, column=1)
 
         tk.Label(top_frame,text="Storage:",bg="#d9d9d9").grid(row=3, column=0)
@@ -180,7 +191,7 @@ class FridgeApp:
         }
     def add_food(self):
         name = self.name_entry.get()
-        expiry = self.expiry_entry.get()
+        expiry = self.expiry_box.get()
         food_type = self.type_box.get()
         storage = self.storage_box.get()
 
