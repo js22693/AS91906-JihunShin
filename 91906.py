@@ -1,7 +1,5 @@
 import tkinter as tk
 from tkinter import ttk
-import datetime as dt
-
 
 
 class Food:
@@ -84,16 +82,13 @@ class FridgeApp:
 
 
     def create_gui(self):
-
         top_frame = tk.Frame(self.root,bg="#d9d9d9")
         top_frame.pack(pady=20)
 
-        
 
         tk.Label(top_frame,text="Food Name:",bg="#d9d9d9").grid(row=0, column=0, padx=10, pady=5)
         self.name_entry = tk.Entry(top_frame,width=40)
         self.name_entry.grid(row=0, column=1)
-
 
 
         tk.Label(top_frame,text="Type:",bg="#d9d9d9").grid(row=2, column=0)
@@ -104,7 +99,7 @@ class FridgeApp:
                 "Meat",
                 "Vegetable",
                 "Fruits",
-                "frozen food"
+                "Frozen Food"
             ],
             state="readonly",
             width=37
@@ -189,6 +184,7 @@ class FridgeApp:
             3: self.box3,
             4: self.box4
         }
+
     def add_food(self):
         name = self.name_entry.get()
         expiry = self.expiry_box.get()
