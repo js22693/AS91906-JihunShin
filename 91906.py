@@ -3,13 +3,12 @@ from tkinter import ttk
 
 
 class Food:
-    def __init__(self, name, expiry, food_type, storage, region, delate):
+    def __init__(self, name, expiry, food_type, storage, region):
         self.name = name
         self.expiry = expiry
         self.food_type = food_type
         self.storage = storage
         self.region = region
-        self.delate = delate
         
 
 class FridgeApp:
@@ -82,7 +81,7 @@ class FridgeApp:
             "expiry": expiry,
             "type": food_type,
             "storage": storage,
-            "delate": delate
+            "delate_button": delate
         }
 
 
@@ -121,6 +120,16 @@ class FridgeApp:
         )
         self.expiry_box.grid(row=1, column=1)
         self.type_box.grid(row=2, column=1)
+
+        tk.Label(top_frame,text="Expiry Date:",bg="#d9d9d9").grid(row=1, column=0)
+        self.expiry_entry = tk.Entry(top_frame,width=40)
+        
+        self.expiry_entry.grid(row=1, column=1)
+        self.type_box.grid(row=2, column=1)
+
+
+
+
 
         tk.Label(top_frame,text="Storage:",bg="#d9d9d9").grid(row=3, column=0)
         self.storage_box = ttk.Combobox(
@@ -192,7 +201,10 @@ class FridgeApp:
 
     def add_food(self):
         name = self.name_entry.get()
-        expiry = self.expiry_box.get()
+        #expiry = self.expiry_box.get()
+        expiry = int(self.expiry_entry.get())
+
+
         food_type = self.type_box.get()
         storage = self.storage_box.get()
 
@@ -271,9 +283,12 @@ class FridgeApp:
             lambda e, r=rect: self.show_info(r)
         )
 
-
+    def show_message(self, text, color="red"):
+        self.message_label.config(text=text, fg=color)
+        
 
     def show_info(self, rect):
+        self.selected_rect = rect
         food = self.food_objects[rect]
         box = self.region_boxes[
             food.region
