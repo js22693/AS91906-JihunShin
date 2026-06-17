@@ -3,13 +3,14 @@ from tkinter import ttk
 
 
 class Food:
-    def __init__(self, name, expiry, food_type, storage, region):
+    def __init__(self, name, expiry, food_type, storage, region, delate):
         self.name = name
         self.expiry = expiry
         self.food_type = food_type
         self.storage = storage
         self.region = region
-
+        self.delate = delate
+        
 
 class FridgeApp:
 
@@ -73,11 +74,15 @@ class FridgeApp:
         )
         storage.pack(fill="x", padx=10)
 
+        delate = tk.Button(frame, text="Delate")
+        delate.pack(fill="x", pady=20, padx=30)
+
         return {
             "name": name,
             "expiry": expiry,
             "type": food_type,
-            "storage": storage
+            "storage": storage,
+            "delate": delate
         }
 
 
@@ -204,7 +209,7 @@ class FridgeApp:
             "Meat": "#EC7063",
             "Vegetable": "#58D68D",
             "Fruits": "#F4D03F",
-            "frozen food": "#2A98E2"
+            "Frozen Food": "#2A98E2"
         }
 
         if storage == "Frozen":
@@ -246,7 +251,7 @@ class FridgeApp:
             expiry,
             food_type,
             storage,
-            region
+            region,
         )
 
         rect = self.canvas.create_rectangle(
@@ -277,6 +282,26 @@ class FridgeApp:
         box["expiry"].config(text=f"Expiry: {food.expiry}")
         box["type"].config(text=f"Type: {food.food_type}")
         box["storage"].config(text=f"Storage: {food.storage}")
+        box["delete_button"].config(command=lambda r=rect: self.delete_food(r))
+    def delete_food(self, rect):
+
+        if rect not in self.food_objects:
+            return
+
+        food = self.food_objects[rect]
+
+        self.canvas.delete(rect)
+
+        del self.food_objects[rect]
+
+        box = self.region_boxes[food.region]
+
+        box["name"].config(text="Name:")
+        box["expiry"].config(text="Expiry:")
+        box["type"].config(text="Type:")
+        box["storage"].config(text="Storage:")
+
+        self.selected_rect = None
 
 
 root = tk.Tk()
