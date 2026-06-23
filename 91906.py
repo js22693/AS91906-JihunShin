@@ -21,6 +21,7 @@ class FridgeApp:
         self.root.configure(bg="#d9d9d9")
 
         self.food_objects = {}
+        self.selected_rect = None
 
         self.frozen_count = 0
         self.refrigerated_count = 0
@@ -109,23 +110,67 @@ class FridgeApp:
             width=37
         )
 
-        tk.Label(top_frame,text="Expiry Date:",bg="#d9d9d9").grid(row=1, column=0)
-        self.expiry_box = ttk.Combobox(
+
+        
+        tk.Label(top_frame,text="Expiry Day:",bg="#d9d9d9").grid(row=1, column=0)
+        self.expiry_day_box = ttk.Combobox(
             top_frame,
             values=[
-                
+                1,
+                2,
+                3,
+                4,
+                5
             ],
             state="readonly",
-            width=37
+            width=17
         )
-        self.expiry_box.grid(row=1, column=1)
+        self.expiry_day_box.grid(row=1, column=0)
         self.type_box.grid(row=2, column=1)
 
-        tk.Label(top_frame,text="Expiry Date:",bg="#d9d9d9").grid(row=1, column=0)
-        self.expiry_entry = tk.Entry(top_frame,width=40)
-        
-        self.expiry_entry.grid(row=1, column=1)
+
+        tk.Label(top_frame,bg="#d9d9d9").grid(row=1, column=2)
+        self.expiry_month_box = ttk.Combobox(
+            top_frame,
+            values=[
+                1,
+                2,
+                3,
+                4,
+                5
+            ],
+            state="readonly",
+            width=10
+        )
+        self.expiry_month_box.grid(row=1, column=1)
         self.type_box.grid(row=2, column=1)
+
+
+
+        tk.Label(top_frame,bg="#d9d9d9").grid(row=1, column=2)
+        self.expiry_year_box = ttk.Combobox(
+            top_frame,
+            values=[
+                2026,
+                2027,
+                2028,
+                2029
+            ],
+            state="readonly",
+            width=10
+        )
+        self.expiry_year_box.grid(row=1, column=2)
+        self.type_box.grid(row=2, column=1)
+
+
+
+
+
+        tk.Label(top_frame,text="Expiry date:",bg="#d9d9d9").grid(row=0, column=0, padx=10, pady=5)
+        self.expiry_date_vage = tk.Entry(top_frame,width=40)
+        self.expiry_date_vage.grid(row=0, column=1)
+
+
 
 
 
@@ -201,12 +246,19 @@ class FridgeApp:
 
     def add_food(self):
         name = self.name_entry.get()
-        #expiry = self.expiry_box.get()
-        expiry = int(self.expiry_entry.get())
+
+        if food_type == "Vegetable" or "Fruits":
+            self.expiry_date_vage
+        else:
+            expiry_day_box = self.expiry_day_box.get()
+            expiry_month_box = self.expiry_month_box.get()
+            expiry_year_box = self.expiry_year_box.get()
+            expiry = f"{expiry_day_box}-{expiry_month_box}-{expiry_year_box}"
 
 
         food_type = self.type_box.get()
         storage = self.storage_box.get()
+            
 
         if not name:
             return
@@ -214,7 +266,8 @@ class FridgeApp:
             return
         if not storage:
             return
-        
+        if not expiry_day_box or expiry_month_box or expiry_year_box:
+            return
         #It Will change icons
         colors = {
             "Dairy": "#5DADE2",
@@ -282,22 +335,23 @@ class FridgeApp:
             "<Button-1>",
             lambda e, r=rect: self.show_info(r)
         )
-
+    
+    """
     def show_message(self, text, color="red"):
         self.message_label.config(text=text, fg=color)
-        
+    """
+
 
     def show_info(self, rect):
         self.selected_rect = rect
         food = self.food_objects[rect]
-        box = self.region_boxes[
-            food.region
-        ]
+        box = self.region_boxes[food.region]
         box["name"].config(text=f"Name: {food.name}")
         box["expiry"].config(text=f"Expiry: {food.expiry}")
         box["type"].config(text=f"Type: {food.food_type}")
         box["storage"].config(text=f"Storage: {food.storage}")
-        box["delete_button"].config(command=lambda r=rect: self.delete_food(r))
+        box["delate_button"].config(command=lambda r=rect: self.delete_food(r))
+
     def delete_food(self, rect):
 
         if rect not in self.food_objects:
