@@ -1,16 +1,1 @@
-[
-    {
-        "name": "onion",
-        "expiry": "01-07-2026",
-        "food_type": "Vegetable",
-        "storage": "Refrigerated",
-        "region": 1
-    },
-    {
-        "name": "chicken",
-        "expiry": "02/07/2026",
-        "food_type": "Meat",
-        "storage": "Frozen",
-        "region": 1
-    }
-]
+[]

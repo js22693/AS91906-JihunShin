@@ -1,15 +1,58 @@
 import tkinter as tk
 from tkinter import ttk
 import json
+import heapq
+from datetime import datetime
+
+
+
+class MainMenu:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Kitchen Management System")
+        self.root.geometry("600x400")
+        self.root.configure(bg="#e6e6e6")
+        self.title_label = tk.Label(
+            self.root, 
+            text="Smart Kitchen", 
+            font=("Arial", 24, "bold"), 
+            bg="#e6e6e6",
+            fg="#333333"
+        )
+        self.title_label.pack(pady=60)
+        self.fridge_btn = tk.Button(
+            self.root, 
+            text="OPEN: Smart Fridge", 
+            font=("Arial", 14, "bold"),
+            width=30,
+            height=2,
+            bg="#5DADE2",
+            fg="white",
+            relief="raised",
+            command=self.open_fridge
+        )
+        self.fridge_btn.pack(pady=20)
+
+    def open_fridge(self):
+        self.root.withdraw()
+        fridge_window = tk.Toplevel(self.root)
+        app = FridgeApp(fridge_window)
+        fridge_window.protocol("WM_DELETE_WINDOW", lambda: self.on_close_fridge(fridge_window))
+
+    def on_close_fridge(self, fridge_window):
+        fridge_window.destroy()
+        self.root.deiconify()
+
 
 
 class Food:
-    def __init__(self, name, expiry, food_type, storage, region):
+    def __init__(self, name, expiry, food_type, storage, region, page=1):
         self.name = name
         self.expiry = expiry
         self.food_type = food_type
         self.storage = storage
         self.region = region
+        self.page = page
 
 
     def to_dict(self):
@@ -18,96 +61,72 @@ class Food:
             "expiry": self.expiry,
             "food_type": self.food_type,
             "storage": self.storage,
-            "region": self.region
+            "region": self.region,
+            "page": self.page
         }
 
 
 class FridgeApp:
-
     def __init__(self, root):
-
         self.root = root
         self.root.title("Smart Fridge")
-        self.root.geometry("1400x900")
+        self.root.geometry("1400x950")
         self.root.configure(bg="#d9d9d9")
-
         self.food_objects = {}
+        self.all_foods = []        
+        self.current_page = 1
+        self.max_page = 1
         self.selected_rect = None
-
-        self.frozen_count = 0
-        self.refrigerated_count = 0
-
         self.create_gui()
         self.load_foods()
 
-    def create_info_box(self, parent):
 
+
+    def create_info_box(self, parent):
         frame = tk.Frame(
             parent,
             width=250,
             height=180,
-            bg="white",
-            relief="solid",
-            bd=1
+            bg="#d9d9d9",
+            relief="flat",
+            bd=0
         )
-
-        frame.pack(pady=20)
+        frame.pack(pady=20) 
         frame.pack_propagate(False)
 
-        name = tk.Label(
-            frame,
-            text="Name:",
-            bg="white",
-            anchor="w"
-        )
+
+        name = tk.Label(frame, text="", bg="#d9d9d9", anchor="w")
         name.pack(fill="x", padx=10, pady=5)
 
-        expiry = tk.Label(
-            frame,
-            text="Expiry:",
-            bg="white",
-            anchor="w"
-        )
+
+        expiry = tk.Label(frame, text="", bg="#d9d9d9", anchor="w")
         expiry.pack(fill="x", padx=10)
 
-        food_type = tk.Label(
-            frame,
-            text="Type:",
-            bg="white",
-            anchor="w"
-        )
+
+        food_type = tk.Label(frame, text="", bg="#d9d9d9", anchor="w")
         food_type.pack(fill="x", padx=10)
 
-        storage = tk.Label(
-            frame,
-            text="Storage:",
-            bg="white",
-            anchor="w"
-        )
+
+        storage = tk.Label(frame, text="", bg="#d9d9d9", anchor="w")
         storage.pack(fill="x", padx=10)
-        delete_button = tk.Button(frame,text="Delete")
-
-        delete_button.pack(pady=10)
-
+        
+        delete_button = tk.Button(frame, text="Delete")
         return {
+            "frame": frame,
             "name": name,
             "expiry": expiry,
             "type": food_type,
             "storage": storage,
             "delete_button": delete_button
-
         }
-
 
     def create_gui(self):
         top_frame = tk.Frame(self.root,bg="#d9d9d9")
         top_frame.pack(pady=20)
 
-
         tk.Label(top_frame,text="Food Name:",bg="#d9d9d9").grid(row=0, column=0, padx=10, pady=5)
         self.name_entry = tk.Entry(top_frame,width=40)
         self.name_entry.grid(row=0, column=1)
-
 
         tk.Label(top_frame,text="Type:",bg="#d9d9d9").grid(row=1,column=0)
         self.type_box = ttk.Combobox(
@@ -123,14 +142,14 @@ class FridgeApp:
             width=37
         )
         self.type_box.grid(row=1,column=1)
-
-
         self.expiry_label = tk.Label(top_frame,text="Expiry Date:",bg="#d9d9d9")
         self.expiry_label.grid(row=2,column=0)
+
+
         self.expiry_frame = tk.Frame(top_frame,bg="#d9d9d9")
         self.expiry_frame.grid(row=2,column=1)
 
-        #Day
+        # Day
         self.day_box = ttk.Combobox(
             self.expiry_frame,
             values=[str(i).zfill(2) for i in range(1, 32)],
@@ -139,7 +158,8 @@ class FridgeApp:
         )
         self.day_box.pack(side="left", padx=2)
 
-        #Month
+
+        # Month
         self.month_box = ttk.Combobox(
             self.expiry_frame,
             values=[str(i).zfill(2) for i in range(1, 13)],
@@ -149,12 +169,12 @@ class FridgeApp:
         self.month_box.pack(side="left", padx=2)
 
 
-        #Day until Expiry
         self.days_frame = tk.Frame(top_frame,bg="#d9d9d9")
         self.days_entry = tk.Entry(self.days_frame,width=40)
         self.days_entry.pack(side="left")
 
-        #Year
+
+        # Year
         from datetime import datetime
         current_year = datetime.now().year
         self.year_box = ttk.Combobox(
@@ -182,18 +202,47 @@ class FridgeApp:
         )
         self.storage_box.grid(row=3, column=1)
 
+
+
+        self.sort_button = tk.Menubutton(
+            top_frame,
+            text="Sort ▼",
+            relief="raised",
+            width=6
+        )
+        self.sort_menu = tk.Menu(self.sort_button,tearoff=0)
+        self.sort_menu.add_command(label="Added Order",command=lambda: self.sort_foods("Added Order"))
+        self.sort_menu.add_command(label="Expiry (Soonest)",command=lambda: self.sort_foods("Expiry (Soonest)"))
+        self.sort_menu.add_command(label="Expiry (Latest)",command=lambda: self.sort_foods("Expiry (Latest)"))
+        self.sort_button["menu"] = self.sort_menu
+        self.sort_button.grid(row=4,column=2,pady=(5, 0))
+
+
         tk.Button(top_frame,text="Add Food",command=self.add_food).grid(row=3, column=2, padx=20)
+        self.error_label = tk.Label(
+            self.root,
+            text="",
+            fg="red",
+            bg="#d9d9d9",
+            font=("Arial", 11, "bold")
+        )
+        self.error_label.pack(pady=(5,10))
         main_frame = tk.Frame(self.root,bg="#d9d9d9")
         main_frame.pack(expand=True)
 
+
         left_frame = tk.Frame(main_frame,bg="#d9d9d9")
         left_frame.grid(row=0,column=0,padx=20)
+ 
 
         self.box1 = self.create_info_box(left_frame)
+        self.box1["frame"].pack_configure(pady=(0, 40))
         self.box3 = self.create_info_box(left_frame)
+
 
         center_frame = tk.Frame(main_frame,bg="#d9d9d9")
         center_frame.grid(row=0,column=1)
+
 
         self.canvas = tk.Canvas(
             center_frame,
@@ -225,10 +274,28 @@ class FridgeApp:
             440, 560,
             fill="white"
         )
+        nav_frame = tk.Frame(center_frame, bg="#d9d9d9")
+        nav_frame.pack(pady=10)
+        
+        self.prev_btn = tk.Button(nav_frame, text="◀", font=("Arial", 14), command=self.prev_page)
+        self.prev_btn.pack(side="left", padx=10)
+
+
+        self.page_label = tk.Label(nav_frame, text="Page 1 / 1", font=("Arial", 12, "bold"), bg="#d9d9d9", width=10)
+        self.page_label.pack(side="left", padx=10)
+
+
+        self.next_btn = tk.Button(nav_frame, text="▶", font=("Arial", 14), command=self.next_page)
+        self.next_btn.pack(side="left", padx=10)
+
+
+
         right_frame = tk.Frame(main_frame,bg="#d9d9d9")
         right_frame.grid(row=0,column=2,padx=20)
 
+
         self.box2 = self.create_info_box(right_frame)
+        self.box2["frame"].pack_configure(pady=(0, 40))
         self.box4 = self.create_info_box(right_frame)
 
         self.region_boxes = {
@@ -238,160 +305,150 @@ class FridgeApp:
             4: self.box4
         }
 
-
-
     def change_expiry_input(self, event=None):
         selected_type = self.type_box.get()
-
         if selected_type in ["Fruits", "Vegetable"]:
-            self.expiry_label.config(text="Day(s) Until Expiry:")
+            self.expiry_label.config(text="Days Until Expiry:")
             self.expiry_frame.grid_remove()
-            self.days_frame.grid(row=2,column=1,sticky="w")
+            self.days_frame.grid(
+                row=2,
+                column=1,
+                sticky="w"
+            )
+
         else:
-            self.expiry_label.config(text="Expiry Date:")
+
+            self.expiry_label.config(
+                text="Expiry Date:"
+            )
+
             self.days_frame.grid_remove()
-            self.expiry_frame.grid(row=2,column=1,sticky="w")
+            self.expiry_frame.grid(
+                row=2,
+                column=1,
+                sticky="w"
+            )
 
     def add_food(self):
-        name = self.name_entry.get()
+        name = self.name_entry.get().strip()
         food_type = self.type_box.get()
         storage = self.storage_box.get()
 
-        from datetime import datetime, timedelta
-        if food_type in ["Fruits", "Vegetable"]:
-            days = self.days_entry.get()
-            if not days.isdigit():
-                return
-            expiry_date = datetime.now() + timedelta(days=int(days))
-            expiry = expiry_date.strftime("%d/%m/%Y")
+        # Food name
+        if not name:
+            self.error_label.config(text="Please enter a food name.")
+            return
 
+        # Type
+        if not food_type:
+            self.error_label.config(text="Please select a food type.")
+            return
+
+        from datetime import datetime, timedelta
+
+        # Fruit and Vegetable
+        if food_type in ["Fruits", "Vegetable"]:
+            days = self.days_entry.get().strip()
+
+            if days == "":
+                self.error_label.config(
+                    text="Please enter the number of days until expiry."
+                )
+                return
+
+            if not days.isdigit():
+                self.error_label.config(
+                    text="Days until expiry must contain numbers only."
+                )
+                return
+
+            expiry_date = datetime.now() + timedelta(days=int(days))
+            expiry = expiry_date.strftime("%d-%m-%Y")
+
+        # Other foods
         else:
             day = self.day_box.get()
             month = self.month_box.get()
             year = self.year_box.get()
+
             if not day or not month or not year:
+                self.error_label.config(
+                    text="Please select an expiry date."
+                )
                 return
-            expiry = f"{day}/{month}/{year}"
-    
 
+            expiry = f"{day}-{month}-{year}"
 
-
-        if not name:
-            return
-        if not food_type:
-            return
+        # Storage
         if not storage:
+            self.error_label.config(
+                text="Please select a storage type."
+            )
             return
-        #It Will change icons
-        colors = {
-            "Dairy": "#5DADE2",
-            "Meat": "#EC7063",
-            "Vegetable": "#58D68D",
-            "Fruits": "#F4D03F",
-            "Frozen Food": "#2A98E2"
-        }
 
-        if storage == "Frozen":
-            count = self.frozen_count
-            x = 110 + (count % 6) * 55
-            y = 90 + (count // 6) * 55
-            self.frozen_count += 1
+        self.error_label.config(text="")
+        self.clear_inputs()
 
-        else:
-            count = self.refrigerated_count
-            if count < 12:
-                x = 110 + (count % 6) * 55
-                y = 270 + (count // 6) * 55
 
-            else:
-                count -= 12
-                x = 110 + (count % 6) * 55
-                y = 450 + (count // 6) * 55
-
-            self.refrigerated_count += 1
-
-        fridge_center_x = 260
-        fridge_center_y = 320
-
-        if x < fridge_center_x:
-            if y < fridge_center_y:
-                region = 1
-            else:
-                region = 3
-
-        else:
-            if y < fridge_center_y:
-                region = 2
-            else:
-                region = 4
-
-        food = Food(
-            name,
-            expiry,
-            food_type,
-            storage,
-            region
-        )
-
-        rect = self.canvas.create_rectangle(
-            x,
-            y,
-            x + 30,
-            y + 30,
-            fill=self.get_food_color(food_type),
-            outline="black"
-        )
-
-        self.food_objects[rect] = food
-
-        self.canvas.tag_bind(
-            rect,
-            "<Button-1>",
-            lambda e, r=rect: self.show_info(r)
-        )
+        food = Food(name, expiry, food_type, storage, region=1, page=1)
+        self.all_foods.append(food)
+        
+        self.reorganize_foods()
+        
+        self.current_page = food.page
+        self.reorganize_foods()
         self.save_foods()
 
+
+
     def show_info(self, rect):
-        self.selected_rect = rect
         food = self.food_objects[rect]
-        box = self.region_boxes[
-            food.region
-        ]
-        box["name"].config(text=f"Name: {food.name}")
-        box["expiry"].config(text=f"Expiry: {food.expiry}")
-        box["type"].config(text=f"Type: {food.food_type}")
-        box["storage"].config(text=f"Storage: {food.storage}")
+        box = self.region_boxes[food.region]
+        if box["name"].cget("text") == f"Name: {food.name}" and box["frame"].cget("relief") == "solid":
+            box["frame"].config(bg="#d9d9d9", relief="flat", bd=0)
+            box["name"].config(text="", bg="#d9d9d9")
+            box["expiry"].config(text="", bg="#d9d9d9")
+            box["type"].config(text="", bg="#d9d9d9")
+            box["storage"].config(text="", bg="#d9d9d9")
+            box["delete_button"].pack_forget()
+            return
+
+        box["frame"].config(bg="white", relief="solid", bd=1)
+        box["name"].config(text=f"Name: {food.name}", bg="white")
+        box["expiry"].config(text=f"Expiry: {food.expiry}", bg="white")
+        box["type"].config(text=f"Type: {food.food_type}", bg="white")
+        box["storage"].config(text=f"Storage: {food.storage}", bg="white")
         box["delete_button"].config(command=lambda r=rect: self.delete_food(r))
+        box["delete_button"].pack(pady=10)
+
+
+
 
     def delete_food(self, rect):
-
         if rect not in self.food_objects:
             return
 
         food = self.food_objects[rect]
+        box = self.region_boxes[food.region]
+        box["frame"].config(bg="#d9d9d9", relief="flat", bd=0)
+        box["name"].config(text="", bg="#d9d9d9")
+        box["expiry"].config(text="", bg="#d9d9d9")
+        box["type"].config(text="", bg="#d9d9d9")
+        box["storage"].config(text="", bg="#d9d9d9")
+        box["delete_button"].pack_forget()
 
-        self.canvas.delete(rect)
+        if food in self.all_foods:
+            self.all_foods.remove(food)
 
-        del self.food_objects[rect]
+        self.clear_info_boxes()
         self.reorganize_foods()
         self.save_foods()
 
-        box = self.region_boxes[food.region]
-
-        box["name"].config(text="Name:")
-        box["expiry"].config(text="Expiry:")
-        box["type"].config(text="Type:")
-        box["storage"].config(text="Storage:")
-
-        self.selected_rect = None
 
 
     def save_foods(self):
-        data = []
-        for food in self.food_objects.values():
-            data.append(
-                food.to_dict()
-            )
+        data = [food.to_dict() for food in self.all_foods]
+
         with open(
             "foods.json",
             "w"
@@ -401,32 +458,69 @@ class FridgeApp:
                 file,
                 indent=4
             )
-    
+
 
     def reorganize_foods(self):
-        foods = list(self.food_objects.values())
         for item in list(self.food_objects.keys()):
             self.canvas.delete(item)
-
         self.food_objects.clear()
-        self.frozen_count = 0
-        self.refrigerated_count = 0
-        for food in foods:
+
+        frozen_count = 0
+        refrig_count = 0
+        
+        for food in self.all_foods:
             if food.storage == "Frozen":
-                count = self.frozen_count
-                x = 110 + (count % 6) * 55
-                y = 90 + (count // 6) * 55
-                self.frozen_count += 1
+                food.page = (frozen_count // 12) + 1
+                p_idx = frozen_count % 12
+                x = 110 + (p_idx % 6) * 55
+                y = 90 + (p_idx // 6) * 55
+                frozen_count += 1
             else:
-                count = self.refrigerated_count
-                if count < 12:
-                    x = 110 + (count % 6) * 55
-                    y = 270 + (count // 6) * 55
+                food.page = (refrig_count // 24) + 1
+                p_idx = refrig_count % 24
+                if p_idx < 12:
+                    x = 110 + (p_idx % 6) * 55
+                    y = 270 + (p_idx // 6) * 55
                 else:
-                    count -= 12
-                    x = 110 + (count % 6) * 55
-                    y = 450 + (count // 6) * 55
-                self.refrigerated_count += 1
+                    tmp = p_idx - 12
+                    x = 110 + (tmp % 6) * 55
+                    y = 450 + (tmp // 6) * 55
+                refrig_count += 1
+                
+            fridge_center_x = 260
+            fridge_center_y = 320
+            if x < fridge_center_x:
+                food.region = 1 if y < fridge_center_y else 3
+            else:
+                food.region = 2 if y < fridge_center_y else 4
+
+        self.max_page = max([f.page for f in self.all_foods] + [1])
+        if self.current_page > self.max_page:
+            self.current_page = self.max_page
+
+        f_render = 0
+        r_render = 0
+        for food in self.all_foods:
+            if food.storage == "Frozen":
+                f_p = (f_render // 12) + 1
+                p_idx = f_render % 12
+                x = 110 + (p_idx % 6) * 55
+                y = 90 + (p_idx // 6) * 55
+                f_render += 1
+                if f_p != self.current_page: continue
+            else:
+                r_p = (r_render // 24) + 1
+                p_idx = r_render % 24
+                if p_idx < 12:
+                    x = 110 + (p_idx % 6) * 55
+                    y = 270 + (p_idx // 6) * 55
+                else:
+                    tmp = p_idx - 12
+                    x = 110 + (tmp % 6) * 55
+                    y = 450 + (tmp // 6) * 55
+                r_render += 1
+                if r_p != self.current_page: continue
+
             rect = self.canvas.create_rectangle(
                 x,
                 y,
@@ -442,6 +536,34 @@ class FridgeApp:
                 lambda e, r=rect: self.show_info(r)
             )
 
+        self.page_label.config(text=f"Page {self.current_page} / {self.max_page}")
+
+
+    def prev_page(self):
+        if self.current_page > 1:
+            self.current_page -= 1
+            self.clear_info_boxes()
+            self.reorganize_foods()
+
+
+    def next_page(self):
+        if self.current_page < self.max_page:
+            self.current_page += 1
+            self.clear_info_boxes()
+            self.reorganize_foods()
+
+
+    def clear_info_boxes(self):
+        for box in self.region_boxes.values():
+            box["frame"].config(bg="#d9d9d9", relief="flat", bd=0)
+            box["name"].config(text="", bg="#d9d9d9")
+            box["expiry"].config(text="", bg="#d9d9d9")
+            box["type"].config(text="", bg="#d9d9d9")
+            box["storage"].config(text="", bg="#d9d9d9")
+            box["delete_button"].pack_forget()
+        self.selected_rect = None
+
+
 
     def get_food_color(self, food_type):
         colors = {
@@ -453,40 +575,26 @@ class FridgeApp:
         }
         return colors[food_type]
     
+    def clear_inputs(self):
 
-    def create_food_from_object(self, food):
+        # Food name
+        self.name_entry.delete(0, tk.END)
 
-        if food.storage == "Frozen":
-            count = self.frozen_count
-            x = 110 + (count % 6) * 55
-            y = 90 + (count // 6) * 55
-            self.frozen_count += 1
-        else:
-            count = self.refrigerated_count
-            if count < 12:
-                x = 110 + (count % 6) * 55
-                y = 270 + (count // 6) * 55
-            else:
-                count -= 12
-                x = 110 + (count % 6) * 55
-                y = 450 + (count // 6) * 55
-            self.refrigerated_count += 1
-        rect = self.canvas.create_rectangle(
-            x,
-            y,
-            x + 30,
-            y + 30,
-            fill=self.get_food_color(food.food_type),
-            outline="black"
-        )
-        self.food_objects[rect] = food
-        self.canvas.tag_bind(
-            rect,
-            "<Button-1>",
-            lambda e, r=rect: self.show_info(r)
-        )
+        # Combobox
+        self.type_box.set("")
+        self.storage_box.set("")
 
+        # Date Combobox
+        self.day_box.set("")
+        self.month_box.set("")
+        self.year_box.set("")
 
+        # Days until expiry
+        self.days_entry.delete(0, tk.END)
+        self.expiry_label.config(text="Expiry Date:")
+        self.days_frame.grid_remove()
+        self.expiry_frame.grid(row=2, column=1, sticky="w")
+        
 
     def load_foods(self):
         try:
@@ -496,20 +604,36 @@ class FridgeApp:
             ) as file:
                 data = json.load(file)
         except:
+            self.all_foods = []
             return
+        self.all_foods = [Food(item["name"], item["expiry"], item["food_type"], item["storage"], item["region"], item.get("page", 1)) for item in data]
+        self.reorganize_foods()
 
-        for item in data:
-            food = Food(
-                item["name"],
-                item["expiry"],
-                item["food_type"],
-                item["storage"],
-                item["region"]
-            )
-            self.create_food_from_object(food)
+
+    def sort_foods(self, option):
+        if option == "Added Order":
+            self.load_foods()
+            return
+            
+        elif option in ["Expiry (Soonest)", "Expiry (Latest)"]:
+            pq = []
+            for food in self.all_foods:
+                expiry = datetime.strptime(food.expiry, "%d-%m-%Y")
+                heapq.heappush(pq, (expiry, id(food), food))
+
+            self.all_foods = []
+            while pq:
+                _, _, food = heapq.heappop(pq)
+                self.all_foods.append(food)
+            if option == "Expiry (Latest)":
+                self.all_foods.reverse()
+
+        self.reorganize_foods()
+        self.save_foods()
+
 
 
 
 root = tk.Tk()
-app = FridgeApp(root)
+app = MainMenu(root)
 root.mainloop()
