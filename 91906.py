@@ -10,16 +10,60 @@ class MainMenu:
     def __init__(self, root):
         self.root = root
         self.root.title("Kitchen Management System")
-        self.root.geometry("600x400")
+        self.root.geometry("600x500")
         self.root.configure(bg="#e6e6e6")
         self.title_label = tk.Label(
             self.root, 
-            text="Smart Kitchen", 
+            text="My Smart Kitchen", 
             font=("Arial", 24, "bold"), 
             bg="#e6e6e6",
             fg="#333333"
         )
-        self.title_label.pack(pady=60)
+        self.title_label.pack(pady=40)
+
+        self.option_frame = tk.LabelFrame(
+            self.root, 
+            text="Choose Fridge Option ", 
+            font=("Arial", 11, "bold"),
+            bg="#e6e6e6", 
+            fg="#333333",
+            padx=20, 
+            pady=15
+        )
+        self.option_frame.pack(pady=10)
+
+        self.fridge_option = tk.IntVar(value=1)
+
+        tk.Radiobutton(
+            self.option_frame, 
+            text="OPTION 1: 1 Big Frozen Storage and 1 small Refrigerated storage", 
+            variable=self.fridge_option, 
+            value=1, 
+            font=("Arial", 11),
+            bg="#e6e6e6",
+            anchor="w"
+        ).pack(fill="x", pady=2)
+
+        tk.Radiobutton(
+            self.option_frame, 
+            text="OPTION 2: Frozen / Refrigerated Half/Half (5:5)", 
+            variable=self.fridge_option, 
+            value=2, 
+            font=("Arial", 11),
+            bg="#e6e6e6",
+            anchor="w"
+        ).pack(fill="x", pady=2)
+
+        tk.Radiobutton(
+            self.option_frame, 
+            text="OPTION 3:  1 Small Frozen Storage and 2 Small Refrigerated storage", 
+            variable=self.fridge_option, 
+            value=3, 
+            font=("Arial", 11),
+            bg="#e6e6e6",
+            anchor="w"
+        ).pack(fill="x", pady=2)
+
         self.fridge_btn = tk.Button(
             self.root, 
             text="OPEN: Smart Fridge", 
@@ -27,16 +71,17 @@ class MainMenu:
             width=30,
             height=2,
             bg="#5DADE2",
-            fg="white",
+            fg="black",
             relief="raised",
             command=self.open_fridge
         )
-        self.fridge_btn.pack(pady=20)
+        self.fridge_btn.pack(pady=30)
 
     def open_fridge(self):
         self.root.withdraw()
         fridge_window = tk.Toplevel(self.root)
-        app = FridgeApp(fridge_window)
+        selected_opt = self.fridge_option.get()
+        app = FridgeApp(fridge_window, selected_opt)
         fridge_window.protocol("WM_DELETE_WINDOW", lambda: self.on_close_fridge(fridge_window))
 
     def on_close_fridge(self, fridge_window):
@@ -67,16 +112,20 @@ class Food:
 
 
 class FridgeApp:
-    def __init__(self, root):
+    def __init__(self, root, fridge_option=1):
         self.root = root
         self.root.title("Smart Fridge")
         self.root.geometry("1400x950")
         self.root.configure(bg="#d9d9d9")
+        
+        self.fridge_option = fridge_option
+
         self.food_objects = {}
-        self.all_foods = []        
+        self.all_foods = []
         self.current_page = 1
         self.max_page = 1
         self.selected_rect = None
+
         self.create_gui()
         self.load_foods()
 
@@ -91,7 +140,7 @@ class FridgeApp:
             relief="flat",
             bd=0
         )
-        frame.pack(pady=20) 
+        frame.pack(pady=20)
         frame.pack_propagate(False)
 
 
@@ -208,7 +257,7 @@ class FridgeApp:
             top_frame,
             text="Sort ▼",
             relief="raised",
-            width=6
+            width=8
         )
         self.sort_menu = tk.Menu(self.sort_button,tearoff=0)
         self.sort_menu.add_command(label="Added Order",command=lambda: self.sort_foods("Added Order"))
@@ -470,21 +519,43 @@ class FridgeApp:
         
         for food in self.all_foods:
             if food.storage == "Frozen":
-                food.page = (frozen_count // 12) + 1
-                p_idx = frozen_count % 12
-                x = 110 + (p_idx % 6) * 55
-                y = 90 + (p_idx // 6) * 55
+                if self.fridge_option == 1:
+                    food.page = (frozen_count // 24) + 1
+                    p_idx = frozen_count % 24
+                    x = 110 + (p_idx % 6) * 55
+                    y = 90 + (p_idx // 6) * 55
+                elif self.fridge_option == 2:
+                    food.page = (frozen_count // 18) + 1
+                    p_idx = frozen_count % 18
+                    x = 110 + (p_idx % 6) * 55
+                    y = 90 + (p_idx // 6) * 55
+                else:
+                    food.page = (frozen_count // 12) + 1
+                    p_idx = frozen_count % 12
+                    x = 110 + (p_idx % 6) * 55
+                    y = 90 + (p_idx // 6) * 55
                 frozen_count += 1
             else:
-                food.page = (refrig_count // 24) + 1
-                p_idx = refrig_count % 24
-                if p_idx < 12:
+                if self.fridge_option == 1:
+                    food.page = (refrig_count // 12) + 1
+                    p_idx = refrig_count % 12
                     x = 110 + (p_idx % 6) * 55
-                    y = 270 + (p_idx // 6) * 55
+                    y = 450 + (p_idx // 6) * 55
+                elif self.fridge_option == 2:
+                    food.page = (refrig_count // 18) + 1
+                    p_idx = refrig_count % 18
+                    x = 110 + (p_idx % 6) * 55
+                    y = 360 + (p_idx // 6) * 55
                 else:
-                    tmp = p_idx - 12
-                    x = 110 + (tmp % 6) * 55
-                    y = 450 + (tmp // 6) * 55
+                    food.page = (refrig_count // 24) + 1
+                    p_idx = refrig_count % 24
+                    if p_idx < 12:
+                        x = 110 + (p_idx % 6) * 55
+                        y = 270 + (p_idx // 6) * 55
+                    else:
+                        tmp = p_idx - 12
+                        x = 110 + (tmp % 6) * 55
+                        y = 450 + (tmp // 6) * 55
                 refrig_count += 1
                 
             fridge_center_x = 260
@@ -502,22 +573,44 @@ class FridgeApp:
         r_render = 0
         for food in self.all_foods:
             if food.storage == "Frozen":
-                f_p = (f_render // 12) + 1
-                p_idx = f_render % 12
-                x = 110 + (p_idx % 6) * 55
-                y = 90 + (p_idx // 6) * 55
+                if self.fridge_option == 1:
+                    f_p = (f_render // 24) + 1
+                    p_idx = f_render % 24
+                    x = 110 + (p_idx % 6) * 55
+                    y = 90 + (p_idx // 6) * 55
+                elif self.fridge_option == 2:
+                    f_p = (f_render // 18) + 1
+                    p_idx = f_render % 18
+                    x = 110 + (p_idx % 6) * 55
+                    y = 90 + (p_idx // 6) * 55
+                else:
+                    f_p = (f_render // 12) + 1
+                    p_idx = f_render % 12
+                    x = 110 + (p_idx % 6) * 55
+                    y = 90 + (p_idx // 6) * 55
                 f_render += 1
                 if f_p != self.current_page: continue
             else:
-                r_p = (r_render // 24) + 1
-                p_idx = r_render % 24
-                if p_idx < 12:
+                if self.fridge_option == 1:
+                    r_p = (r_render // 12) + 1
+                    p_idx = r_render % 12
                     x = 110 + (p_idx % 6) * 55
-                    y = 270 + (p_idx // 6) * 55
+                    y = 450 + (p_idx // 6) * 55
+                elif self.fridge_option == 2:
+                    r_p = (r_render // 18) + 1
+                    p_idx = r_render % 18
+                    x = 110 + (p_idx % 6) * 55
+                    y = 360 + (p_idx // 6) * 55
                 else:
-                    tmp = p_idx - 12
-                    x = 110 + (tmp % 6) * 55
-                    y = 450 + (tmp // 6) * 55
+                    r_p = (r_render // 24) + 1
+                    p_idx = r_render % 24
+                    if p_idx < 12:
+                        x = 110 + (p_idx % 6) * 55
+                        y = 270 + (p_idx // 6) * 55
+                    else:
+                        tmp = p_idx - 12
+                        x = 110 + (tmp % 6) * 55
+                        y = 450 + (tmp // 6) * 55
                 r_render += 1
                 if r_p != self.current_page: continue
 
@@ -614,7 +707,7 @@ class FridgeApp:
         if option == "Added Order":
             self.load_foods()
             return
-            
+
         elif option in ["Expiry (Soonest)", "Expiry (Latest)"]:
             pq = []
             for food in self.all_foods:
